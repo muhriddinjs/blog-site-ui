@@ -2,78 +2,46 @@ import { motion } from "motion/react";
 import { Link } from "react-router";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+import { articleService } from "../services/articleService";
 
 export function Blog() {
-  // This data will be fetched from API: GET /api/articles
-  const articles = [
-    {
-      id: 1,
-      slug: "react-best-practices-2026",
-      title: "React Best Practices 2026 yilda",
-      excerpt: "Zamonaviy React ilovalarini yaratishda eng yaxshi amaliyotlar va tavsiyalar.",
-      date: "2026-03-15",
-      readTime: "5 daqiqa",
-      category: "Development",
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      slug: "typescript-advanced-patterns",
-      title: "TypeScript Advanced Patterns",
-      excerpt: "TypeScript'da ilg'or pattern'lar va ulardan qanday foydalanish.",
-      date: "2026-03-10",
-      readTime: "8 daqiqa",
-      category: "Development",
-      image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      slug: "ui-ux-trends-2026",
-      title: "UI/UX Trends 2026",
-      excerpt: "2026 yilning eng so'nggi dizayn tendentsiyalari va qo'llanmalari.",
-      date: "2026-03-05",
-      readTime: "6 daqiqa",
-      category: "Design",
-      image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      slug: "web-performance-optimization",
-      title: "Web Performance Optimization",
-      excerpt: "Veb-saytingiz tezligini oshirish uchun amaliy maslahatlar.",
-      date: "2026-02-28",
-      readTime: "7 daqiqa",
-      category: "Performance",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      slug: "nodejs-microservices",
-      title: "Node.js Microservices Architecture",
-      excerpt: "Node.js da microservices arxitekturasini qurish bo'yicha qo'llanma.",
-      date: "2026-02-20",
-      readTime: "10 daqiqa",
-      category: "Backend",
-      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=400&fit=crop",
-    },
-    {
-      id: 6,
-      slug: "ai-integration-web-apps",
-      title: "AI Integration in Web Applications",
-      excerpt: "Sun'iy intellekt texnologiyalarini veb-ilovalaringizga qo'shish.",
-      date: "2026-02-15",
-      readTime: "9 daqiqa",
-      category: "AI",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop",
-    },
-  ];
+  const { data: articles = [], isLoading, error } = useQuery({
+    queryKey: ["articles"],
+    queryFn: () => articleService.getAll(),
+  });
 
   const categories = ["Hammasi", "Development", "Design", "Performance", "Backend", "AI"];
   const [selectedCategory, setSelectedCategory] = useState("Hammasi");
 
   const filteredArticles = selectedCategory === "Hammasi"
     ? articles
-    : articles.filter((article) => article.category === selectedCategory);
+    : articles.filter((article: any) => article.category === selectedCategory);
+
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 font-medium">Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg"
+        >
+          Qayta urinish
+        </button>
+      </div>
+    );
+  }
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -139,11 +107,11 @@ export function Blog() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar size={14} />
-                      {new Date(article.date).toLocaleDateString('uz-UZ')}
+                      {new Date(article.published_at).toLocaleDateString('uz-UZ')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock size={14} />
-                      {article.readTime}
+                      {article.read_time}
                     </span>
                   </div>
                   
@@ -152,7 +120,7 @@ export function Blog() {
                   </h2>
                   
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {article.excerpt}
+                    {article.summary}
                   </p>
                   
                   <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">

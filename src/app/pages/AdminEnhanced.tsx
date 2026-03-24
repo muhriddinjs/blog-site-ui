@@ -5,10 +5,16 @@ import {
   ArrowLeft, Search, Eye, CheckCircle, Clock
 } from "lucide-react";
 import { Link } from "react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { articleService } from "../services/articleService";
+import { portfolioService } from "../services/portfolioService";
+import { certificateService } from "../services/certificateService";
+import { authService } from "../services/authService";
 import { RichTextEditor } from "../components/admin/RichTextEditor";
 import { ImageUpload } from "../components/admin/ImageUpload";
 import { PreviewModal } from "../components/admin/PreviewModal";
 import { toast } from "sonner";
+import { LogOut, Key } from "lucide-react";
 
 type TabType = "articles" | "projects" | "certificates" | "about";
 
@@ -16,15 +22,15 @@ interface Article {
   id: number;
   title: string;
   slug: string;
-  excerpt: string;
+  summary: string;
   category: string;
-  date: string;
-  readTime: string;
+  published_at: string;
+  read_time: string;
   image: string;
   content: string;
   status: "draft" | "published";
-  seoTitle?: string;
-  seoDescription?: string;
+  seo_title?: string;
+  seo_description?: string;
   keywords?: string[];
 }
 
@@ -59,67 +65,132 @@ interface AboutData {
 }
 
 export function Admin() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>("articles");
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [previewData, setPreviewData] = useState<any>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({ old: "", new: "" });
 
-  // Mock data
-  const [articles, setArticles] = useState<Article[]>([
-    {
-      id: 1,
-      title: "React Best Practices 2026",
-      slug: "react-best-practices-2026",
-      excerpt: "Zamonaviy React ilovalarini yaratishda eng yaxshi amaliyotlar.",
-      category: "Development",
-      date: "2026-03-15",
-      readTime: "5 daqiqa",
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=400&fit=crop",
-      content: "<h2>Kirish</h2><p>React eng mashhur front-end kutubxonalardan biri...</p>",
-      status: "published",
-      seoTitle: "React Best Practices 2026 - Complete Guide",
-      seoDescription: "Learn the best practices for React development in 2026",
-      keywords: ["react", "javascript", "best practices"],
-    },
-  ]);
+  // Articles Query
+  const { data: articles = [], isLoading: articlesLoading } = useQuery({
+    queryKey: ["articles"],
+    queryFn: () => articleService.getAll(),
+    enabled: activeTab === "articles",
+  });
 
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 1,
-      title: "E-Commerce Platform",
-      description: "Zamonaviy e-commerce platformasi.",
-      category: "Web Development",
-      tags: ["React", "Node.js", "MongoDB"],
-      image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=600&fit=crop",
-      liveUrl: "#",
-      githubUrl: "#",
+  // Articles Mutations
+  const createMutation = useMutation({
+    mutationFn: (newArticle: any) => articleService.create(newArticle),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["articles"] });
+      toast.success("Maqola qo'shildi");
+      setIsAdding(false);
     },
-  ]);
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
 
-  const [certificates, setCertificates] = useState<Certificate[]>([
-    {
-      id: 1,
-      title: "AWS Certified Solutions Architect",
-      issuer: "Amazon Web Services",
-      type: "Sertifikat",
-      date: "2026-02-15",
-      skills: ["AWS", "Cloud Architecture"],
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop",
-      credentialUrl: "#",
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => articleService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["articles"] });
+      toast.success("Maqola yangilandi");
+      setEditingItem(null);
     },
-  ]);
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => articleService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["articles"] });
+      toast.success("Maqola o'chirildi");
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  // Projects Query
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => portfolioService.getAll(),
+    enabled: activeTab === "projects",
+  });
+
+  // Certificates Query
+  const { data: certificates = [], isLoading: certificatesLoading } = useQuery({
+    queryKey: ["certificates"],
+    queryFn: () => certificateService.getAll(),
+    enabled: activeTab === "certificates",
+  });
 
   const [aboutData, setAboutData] = useState<AboutData>({
     name: "Sizning Ismingiz",
-    title: "Full Stack Developer & Designer",
-    tagline: "Innovatsiya va kreativlik orqali g'oyalarni hayotga tatbiq etaman",
-    bio: "Men zamonaviy veb-ilovalar yaratish bilan shug'ullanaman.",
-    stats: [
-      { value: "50+", label: "Loyihalar" },
-      { value: "30+", label: "Maqolalar" },
-      { value: "5+", label: "Yillik tajriba" },
-    ],
+    title: "Full Stack Developer",
+    tagline: "Innovatsiya",
+    bio: "Bio...",
+    stats: [],
+  });
+
+  // Project Mutations
+  const createProjectMutation = useMutation({
+    mutationFn: (newProject: any) => portfolioService.create(newProject),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Proyekt qo'shildi");
+      setIsAdding(false);
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => portfolioService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Proyekt yangilandi");
+      setEditingItem(null);
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: (id: number) => portfolioService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Proyekt o'chirildi");
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  // Certificate Mutations
+  const createCertMutation = useMutation({
+    mutationFn: (newCert: any) => certificateService.create(newCert),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
+      toast.success("Sertifikat qo'shildi");
+      setIsAdding(false);
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const updateCertMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => certificateService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
+      toast.success("Sertifikat yangilandi");
+      setEditingItem(null);
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const deleteCertMutation = useMutation({
+    mutationFn: (id: number) => certificateService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
+      toast.success("Sertifikat o'chirildi");
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
   });
 
   const tabs = [
@@ -133,63 +204,70 @@ export function Admin() {
     if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
     
     if (activeTab === "articles") {
-      setArticles(articles.filter((item) => item.id !== id));
-      toast.success("Maqola o'chirildi");
+      deleteMutation.mutate(id);
     } else if (activeTab === "projects") {
-      setProjects(projects.filter((item) => item.id !== id));
-      toast.success("Proyekt o'chirildi");
+      deleteProjectMutation.mutate(id);
     } else if (activeTab === "certificates") {
-      setCertificates(certificates.filter((item) => item.id !== id));
-      toast.success("Sertifikat o'chirildi");
+      deleteCertMutation.mutate(id);
     }
   };
 
   const handleSave = (data: any) => {
     if (activeTab === "articles") {
       if (editingItem) {
-        setArticles(articles.map((item) => (item.id === editingItem.id ? { ...data, id: editingItem.id } : item)));
-        toast.success("Maqola yangilandi");
+        updateMutation.mutate({ id: editingItem.id, data });
       } else {
-        setArticles([...articles, { ...data, id: Date.now() }]);
-        toast.success("Maqola qo'shildi");
+        createMutation.mutate(data);
       }
     } else if (activeTab === "projects") {
       if (editingItem) {
-        setProjects(projects.map((item) => (item.id === editingItem.id ? { ...data, id: editingItem.id } : item)));
-        toast.success("Proyekt yangilandi");
+        updateProjectMutation.mutate({ id: editingItem.id, data });
       } else {
-        setProjects([...projects, { ...data, id: Date.now() }]);
-        toast.success("Proyekt qo'shildi");
+        createProjectMutation.mutate(data);
       }
     } else if (activeTab === "certificates") {
       if (editingItem) {
-        setCertificates(certificates.map((item) => (item.id === editingItem.id ? { ...data, id: editingItem.id } : item)));
-        toast.success("Sertifikat yangilandi");
+        updateCertMutation.mutate({ id: editingItem.id, data });
       } else {
-        setCertificates([...certificates, { ...data, id: Date.now() }]);
-        toast.success("Sertifikat qo'shildi");
+        createCertMutation.mutate(data);
       }
     } else if (activeTab === "about") {
       setAboutData(data);
       toast.success("About ma'lumotlari yangilandi");
     }
 
-    setEditingItem(null);
-    setIsAdding(false);
+    if (activeTab !== "articles" && activeTab !== "projects" && activeTab !== "certificates") {
+      setEditingItem(null);
+      setIsAdding(false);
+    }
   };
 
-  const filteredArticles = articles.filter((article) =>
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await authService.changePassword(passwordData.old, passwordData.new);
+      toast.success("Parol muvaffaqiyatli o'zgartirildi");
+      setIsChangingPassword(false);
+      setPasswordData({ old: "", new: "" });
+    } catch (err) {
+      toast.error("Parolni o'zgartirishda xatolik");
+    }
+  };
+
+
+  const filteredArticles = articles.filter((article: any) =>
     article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    article.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+    article.summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredProjects = projects.filter((project) =>
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+
+  const filteredProjects = projects.filter((project: any) =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredCertificates = certificates.filter((cert) =>
-    cert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredCertificates = certificates.filter((cert: any) =>
+    cert.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cert.issuer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -205,13 +283,31 @@ export function Admin() {
                 Sayt kontentini boshqarish
               </p>
             </div>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ArrowLeft size={18} />
-              Saytga qaytish
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsChangingPassword(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                title="Parolni o'zgartirish"
+              >
+                <Key size={18} />
+                <span className="hidden sm:inline">Parol</span>
+              </button>
+              <button
+                onClick={() => authService.logout()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                title="Chiqish"
+              >
+                <LogOut size={18} />
+                <span className="hidden sm:inline">Chiqish</span>
+              </button>
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ArrowLeft size={18} />
+                Saytga qaytish
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -276,8 +372,15 @@ export function Admin() {
 
           {/* Articles List */}
           {activeTab === "articles" && !editingItem && !isAdding && (
-            <ArticlesList articles={filteredArticles} onEdit={setEditingItem} onDelete={handleDelete} onPreview={setPreviewData} />
+            articlesLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+              </div>
+            ) : (
+              <ArticlesList articles={filteredArticles} onEdit={setEditingItem} onDelete={handleDelete} onPreview={setPreviewData} />
+            )
           )}
+
 
           {/* Projects List */}
           {activeTab === "projects" && !editingItem && !isAdding && (
@@ -338,11 +441,73 @@ export function Admin() {
           <article className="prose prose-lg dark:prose-invert max-w-none">
             <img src={previewData.image} alt={previewData.title} className="w-full rounded-lg mb-6" />
             <h1>{previewData.title}</h1>
-            <p className="text-gray-600 dark:text-gray-400">{previewData.excerpt}</p>
+            <p className="text-gray-600 dark:text-gray-400">{previewData.summary}</p>
             <div dangerouslySetInnerHTML={{ __html: previewData.content }} />
           </article>
         )}
       </PreviewModal>
+
+      {/* Password Change Modal */}
+      {isChangingPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Key className="text-purple-600" size={24} />
+                Parolni o'zgartirish
+              </h2>
+              <button
+                onClick={() => setIsChangingPassword(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Eski parol</label>
+                <input
+                  type="password"
+                  value={passwordData.old}
+                  onChange={(e) => setPasswordData({ ...passwordData, old: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Yangi parol</label>
+                <input
+                  type="password"
+                  value={passwordData.new}
+                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsChangingPassword(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-colors"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -363,13 +528,14 @@ function ArticlesList({ articles, onEdit, onDelete, onPreview }: any) {
                 <Clock size={16} className="text-yellow-600" />
               )}
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{article.excerpt}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{article.summary}</p>
+
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                 {article.category}
               </span>
-              <span>{article.date}</span>
-              <span>{article.readTime}</span>
+              <span>{new Date(article.published_at).toLocaleDateString()}</span>
+              <span>{article.read_time}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -392,14 +558,14 @@ function ArticlesList({ articles, onEdit, onDelete, onPreview }: any) {
 function ProjectsList({ projects, onEdit, onDelete }: any) {
   return (
     <div className="grid gap-4">
-      {projects.map((project: Project) => (
+      {projects.map((project: any) => (
         <div key={project.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-          <img src={project.image} alt={project.title} className="w-24 h-24 rounded-lg object-cover" />
+          <img src={project.image} alt={project.name} className="w-24 h-24 rounded-lg object-cover" />
           <div className="flex-1">
-            <h3 className="font-semibold text-lg mb-1">{project.title}</h3>
+            <h3 className="font-semibold text-lg mb-1">{project.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{project.description}</p>
             <div className="flex flex-wrap gap-2">
-              {project.tags.map((tag) => (
+              {project.technologies?.map((tag: string) => (
                 <span key={tag} className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                   {tag}
                 </span>
@@ -423,17 +589,17 @@ function ProjectsList({ projects, onEdit, onDelete }: any) {
 function CertificatesList({ certificates, onEdit, onDelete }: any) {
   return (
     <div className="grid gap-4">
-      {certificates.map((cert: Certificate) => (
+      {certificates.map((cert: any) => (
         <div key={cert.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-          <img src={cert.image} alt={cert.title} className="w-24 h-24 rounded-lg object-cover" />
+          <img src={cert.image} alt={cert.name} className="w-24 h-24 rounded-lg object-cover" />
           <div className="flex-1">
-            <h3 className="font-semibold text-lg mb-1">{cert.title}</h3>
+            <h3 className="font-semibold text-lg mb-1">{cert.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{cert.issuer}</p>
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                {cert.type}
+                {cert.certificate_type}
               </span>
-              <span>{cert.date}</span>
+              <span>{cert.issued_date ? new Date(cert.issued_date).toLocaleDateString() : "Sana yo'q"}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -456,15 +622,15 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
     data || {
       title: "",
       slug: "",
-      excerpt: "",
+      summary: "",
       category: "Development",
-      date: new Date().toISOString().split("T")[0],
-      readTime: "",
+      published_at: new Date().toISOString().split("T")[0],
+      read_time: "",
       image: "",
       content: "",
       status: "draft",
-      seoTitle: "",
-      seoDescription: "",
+      seo_title: "",
+      seo_description: "",
       keywords: [],
     }
   );
@@ -506,8 +672,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
       <div>
         <label className="block text-sm font-medium mb-2">Qisqacha mazmun</label>
         <textarea
-          value={formData.excerpt}
-          onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+          value={formData.summary}
+          onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
           className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
           rows={3}
           required
@@ -544,8 +710,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
           <label className="block text-sm font-medium mb-2">Sana</label>
           <input
             type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            value={formData.published_at}
+            onChange={(e) => setFormData({ ...formData, published_at: e.target.value })}
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
             required
           />
@@ -554,8 +720,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
           <label className="block text-sm font-medium mb-2">O'qish vaqti</label>
           <input
             type="text"
-            value={formData.readTime}
-            onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
+            value={formData.read_time}
+            onChange={(e) => setFormData({ ...formData, read_time: e.target.value })}
             placeholder="5 daqiqa"
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
             required
@@ -587,8 +753,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
             <label className="block text-sm font-medium mb-2">SEO Title</label>
             <input
               type="text"
-              value={formData.seoTitle}
-              onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+              value={formData.seo_title}
+              onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
               placeholder={formData.title}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
             />
@@ -597,9 +763,9 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
           <div>
             <label className="block text-sm font-medium mb-2">SEO Description</label>
             <textarea
-              value={formData.seoDescription}
-              onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
-              placeholder={formData.excerpt}
+              value={formData.seo_description}
+              onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+              placeholder={formData.summary}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
               rows={2}
             />
@@ -680,13 +846,13 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
 function ProjectForm({ data, onSave, onCancel }: any) {
   const [formData, setFormData] = useState(
     data || {
-      title: "",
+      name: "",
       description: "",
       category: "Web Development",
-      tags: [],
+      technologies: [],
       image: "",
-      liveUrl: "",
-      githubUrl: "",
+      live_url: "",
+      github_url: "",
     }
   );
 
@@ -697,11 +863,23 @@ function ProjectForm({ data, onSave, onCancel }: any) {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">Nomi</label>
-          <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
+          <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Kategoriya</label>
-          <input type="text" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
+          <select 
+            value={formData.category} 
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })} 
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" 
+            required
+          >
+            <option value="web">Web</option>
+            <option value="mobile">Mobile</option>
+            <option value="design">Design</option>
+            <option value="backend">Backend</option>
+            <option value="fullstack">Fullstack</option>
+            <option value="other">Other</option>
+          </select>
         </div>
       </div>
 
@@ -711,16 +889,16 @@ function ProjectForm({ data, onSave, onCancel }: any) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Teglar</label>
+        <label className="block text-sm font-medium mb-2">Texnologiyalar</label>
         <div className="flex gap-2 mb-2">
-          <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (tagInput.trim()) { setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] }); setTagInput(""); } } }} placeholder="Teg kiriting va Enter bosing" className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
-          <button type="button" onClick={() => { if (tagInput.trim()) { setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] }); setTagInput(""); } }} className="px-4 py-2 rounded-lg bg-blue-600 text-white">Qo'shish</button>
+          <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (tagInput.trim()) { setFormData({ ...formData, technologies: [...formData.technologies, tagInput.trim()] }); setTagInput(""); } } }} placeholder="Texnologiya kiriting va Enter bosing" className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+          <button type="button" onClick={() => { if (tagInput.trim()) { setFormData({ ...formData, technologies: [...formData.technologies, tagInput.trim()] }); setTagInput(""); } }} className="px-4 py-2 rounded-lg bg-blue-600 text-white">Qo'shish</button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {formData.tags.map((tag: string, index: number) => (
+          {formData.technologies.map((tag: string, index: number) => (
             <span key={index} className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm flex items-center gap-2">
               {tag}
-              <button type="button" onClick={() => setFormData({ ...formData, tags: formData.tags.filter((_: any, i: number) => i !== index) })} className="text-red-600 hover:text-red-700"><X size={14} /></button>
+              <button type="button" onClick={() => setFormData({ ...formData, technologies: formData.technologies.filter((_: any, i: number) => i !== index) })} className="text-red-600 hover:text-red-700"><X size={14} /></button>
             </span>
           ))}
         </div>
@@ -729,19 +907,24 @@ function ProjectForm({ data, onSave, onCancel }: any) {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">Live URL</label>
-          <input type="url" value={formData.liveUrl} onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+          <input type="url" value={formData.live_url} onChange={(e) => setFormData({ ...formData, live_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">GitHub URL</label>
-          <input type="url" value={formData.githubUrl} onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+          <input type="url" value={formData.github_url} onChange={(e) => setFormData({ ...formData, github_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
         </div>
       </div>
 
       <ImageUpload value={formData.image} onChange={(url) => setFormData({ ...formData, image: url })} />
 
-      <div className="flex gap-3">
-        <button type="submit" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg transition-shadow"><Save size={18} />Saqlash</button>
-        <button type="button" onClick={onCancel} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><X size={18} />Bekor qilish</button>
+      <div>
+        <label className="block text-sm font-medium mb-2">Sertifikat linki</label>
+        <input type="url" value={formData.credential_url} onChange={(e) => setFormData({ ...formData, credential_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <button type="submit" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg transition-shadow"><Save size={18} />Saqlash</button>
+        <button type="button" onClick={onCancel} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><X size={18} />Bekor qilish</button>
       </div>
     </form>
   );
@@ -750,13 +933,13 @@ function ProjectForm({ data, onSave, onCancel }: any) {
 function CertificateForm({ data, onSave, onCancel }: any) {
   const [formData, setFormData] = useState(
     data || {
-      title: "",
+      name: "",
       issuer: "",
-      type: "Sertifikat",
-      date: new Date().toISOString().split("T")[0],
+      certificate_type: "certificate",
+      issued_date: new Date().toISOString().split("T")[0],
       skills: [],
       image: "",
-      credentialUrl: "",
+      credential_url: "",
     }
   );
 
@@ -767,7 +950,7 @@ function CertificateForm({ data, onSave, onCancel }: any) {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">Nomi</label>
-          <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
+          <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Beruvchi</label>
@@ -778,14 +961,20 @@ function CertificateForm({ data, onSave, onCancel }: any) {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">Turi</label>
-          <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
-            <option>Sertifikat</option>
-            <option>Diplom</option>
+          <select 
+            value={formData.certificate_type} 
+            onChange={(e) => setFormData({ ...formData, certificate_type: e.target.value })} 
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+          >
+            <option value="certificate">Sertifikat</option>
+            <option value="diploma">Diplom</option>
+            <option value="course">Kurs</option>
+            <option value="badge">Badge</option>
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Sana</label>
-          <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
+          <input type="date" value={formData.issued_date} onChange={(e) => setFormData({ ...formData, issued_date: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" required />
         </div>
       </div>
 

@@ -2,77 +2,38 @@ import { motion } from "motion/react";
 import { ExternalLink, Github } from "lucide-react";
 import { useState } from "react";
 
-export function Portfolio() {
-  // This data will be fetched from API: GET /api/projects
-  const projects = [
-    {
-      id: 1,
-      title: "E-Commerce Platform",
-      description: "Zamonaviy e-commerce platformasi React va Node.js yordamida yaratilgan.",
-      image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=600&fit=crop",
-      tags: ["React", "Node.js", "MongoDB", "Stripe"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Web Development",
-    },
-    {
-      id: 2,
-      title: "Task Management App",
-      description: "Jamoa uchun vazifalarni boshqarish ilovasi.",
-      image: "https://images.unsplash.com/photo-1540350394557-8d14678e7f91?w=800&h=600&fit=crop",
-      tags: ["React", "TypeScript", "Firebase", "Tailwind"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Web App",
-    },
-    {
-      id: 3,
-      title: "Portfolio Website",
-      description: "Kreativ portfolio veb-sayt dizayn va development.",
-      image: "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop",
-      tags: ["React", "Framer Motion", "Tailwind CSS"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Design",
-    },
-    {
-      id: 4,
-      title: "Weather Dashboard",
-      description: "Real-time ob-havo ma'lumotlarini ko'rsatuvchi dashboard.",
-      image: "https://images.unsplash.com/photo-1592210454359-9043f067919b?w=800&h=600&fit=crop",
-      tags: ["React", "API Integration", "Charts", "Responsive"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Web App",
-    },
-    {
-      id: 5,
-      title: "Social Media App",
-      description: "Social media ilovasi React Native bilan yaratilgan.",
-      image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop",
-      tags: ["React Native", "Redux", "Node.js", "PostgreSQL"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Mobile",
-    },
-    {
-      id: 6,
-      title: "Analytics Platform",
-      description: "Ma'lumotlarni tahlil qilish va vizualizatsiya platformasi.",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop",
-      tags: ["React", "D3.js", "Python", "FastAPI"],
-      liveUrl: "#",
-      githubUrl: "#",
-      category: "Data Science",
-    },
-  ];
+import { useQuery } from "@tanstack/react-query";
+import { portfolioService } from "../services/portfolioService";
 
-  const categories = ["Hammasi", "Web Development", "Web App", "Mobile", "Design", "Data Science"];
+export function Portfolio() {
   const [selectedCategory, setSelectedCategory] = useState("Hammasi");
+
+  const { data: projects = [], isLoading, error } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => portfolioService.getAll(),
+  });
+
+  const categories = ["Hammasi", ...new Set(projects.map((p: any) => p.category))];
 
   const filteredProjects = selectedCategory === "Hammasi"
     ? projects
-    : projects.filter((project) => project.category === selectedCategory);
+    : projects.filter((project: any) => project.category === selectedCategory);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-red-600">
+        Xatolik yuz berdi. Iltimos keyinroq urinib ko'ring.
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -123,12 +84,12 @@ export function Portfolio() {
             <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
               <img
                 src={project.image}
-                alt={project.title}
+                alt={project.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center gap-4 pb-4">
                 <a
-                  href={project.liveUrl}
+                  href={project.live_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-900 transition-colors"
@@ -137,7 +98,7 @@ export function Portfolio() {
                   <ExternalLink size={18} />
                 </a>
                 <a
-                  href={project.githubUrl}
+                  href={project.github_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-900 transition-colors"
@@ -149,18 +110,18 @@ export function Portfolio() {
             </div>
 
             <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
+              <h3 className="text-xl font-semibold mb-2">{project.name}</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                 {project.description}
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {project.tags.map((tag) => (
+                {project.technologies?.map((tag: any) => (
                   <span
                     key={tag}
                     className="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                   >
-                    {tag}
+                    #{tag}
                   </span>
                 ))}
               </div>

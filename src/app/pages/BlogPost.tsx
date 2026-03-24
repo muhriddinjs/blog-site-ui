@@ -7,52 +7,41 @@ import { TableOfContents } from "../components/TableOfContents";
 import { SEOHead } from "../components/SEOHead";
 import { Toaster } from "sonner";
 
+import { useQuery } from "@tanstack/react-query";
+import { articleService } from "../services/articleService";
+
 export function BlogPost() {
   const { slug } = useParams();
 
-  // This data will be fetched from API: GET /api/articles/:slug
-  const article = {
-    slug: slug,
-    title: "React Best Practices 2026 yilda",
-    date: "2026-03-15",
-    readTime: "5 daqiqa",
-    category: "Development",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=600&fit=crop",
-    content: `
-      <h2 id="kirish">Kirish</h2>
-      <p>React hozirgi kunda eng mashhur front-end kutubxonalardan biri hisoblanadi. 2026 yilda React bilan ishlashning eng yaxshi amaliyotlarini ko'rib chiqamiz.</p>
-      
-      <h2 id="hooks">1. Hooks dan to'g'ri foydalanish</h2>
-      <p>React Hooks zamonaviy React dasturlashning asosiy qismidir. useState, useEffect, va boshqa hooklar dan samarali foydalanish muhim.</p>
-      
-      <h3 id="usestate">useState Hook</h3>
-      <p>useState hook komponentda state boshqarish uchun ishlatiladi. Uni to'g'ri ishlatish performance ga ta'sir qiladi.</p>
-      
-      <h2 id="component-structure">2. Component tuzilishi</h2>
-      <p>Componentlarni kichik va qayta ishlatilishi mumkin bo'lgan qilib yaratish kerak. Har bir component bitta vazifani bajarishi kerak.</p>
-      
-      <h3 id="separation">Separation of Concerns</h3>
-      <p>Logic va UI ni ajratish code'ni tushunish va maintain qilishni osonlashtiradi.</p>
-      
-      <h2 id="performance">3. Performance optimizatsiyasi</h2>
-      <p>React.memo, useMemo, va useCallback dan foydalanib performanceni yaxshilash mumkin. Lekin bularni ortiqcha ishlatmaslik ham muhim.</p>
-      
-      <h3 id="memo">React.memo</h3>
-      <p>Component qayta render bo'lishini oldini olish uchun React.memo dan foydalaning.</p>
-      
-      <h2 id="xulosa">Xulosa</h2>
-      <p>React bilan ishlashda bu best practicelarni amal qilish sizning ilovangizni samarali va maintainable qiladi.</p>
-    `,
-    seoTitle: "React Best Practices 2026 - Complete Guide",
-    seoDescription: "Learn the best practices for React development in 2026. Comprehensive guide covering hooks, component structure, and performance optimization.",
-    keywords: ["react", "javascript", "best practices", "2026", "hooks", "performance"],
-  };
+  const { data: article, isLoading, error } = useQuery({
+    queryKey: ["article", slug],
+    queryFn: () => articleService.getBySlug(slug!),
+    enabled: !!slug,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !article) {
+    return (
+      <div className="text-center py-24">
+        <h2 className="text-2xl font-bold mb-4">Maqola topilmadi</h2>
+        <Link to="/" className="text-purple-600 hover:underline">Bosh sahifaga qaytish</Link>
+      </div>
+    );
+  }
+
 
   return (
     <>
       <SEOHead
         title={article.title}
-        description={article.seoDescription}
+        description={article.seo_description}
         keywords={article.keywords}
         image={article.image}
         type="article"
@@ -88,7 +77,7 @@ export function BlogPost() {
           <div className="flex items-center gap-6 text-gray-600 dark:text-gray-400 mb-8">
             <span className="flex items-center gap-2">
               <Calendar size={18} />
-              {new Date(article.date).toLocaleDateString('uz-UZ', { 
+              {new Date(article.published_at).toLocaleDateString('uz-UZ', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
@@ -96,7 +85,7 @@ export function BlogPost() {
             </span>
             <span className="flex items-center gap-2">
               <Clock size={18} />
-              {article.readTime}
+              {article.read_time}
             </span>
           </div>
 
