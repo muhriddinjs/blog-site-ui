@@ -890,7 +890,7 @@ function ProjectForm({ data, onSave, onCancel }: any) {
     data || {
       name: "",
       description: "",
-      category: "Web Development",
+      category: "web",
       technologies: [],
       image: "",
       live_url: "",
@@ -959,10 +959,7 @@ function ProjectForm({ data, onSave, onCancel }: any) {
 
       <ImageUpload value={formData.image} onChange={(url) => setFormData({ ...formData, image: url })} />
 
-      <div>
-        <label className="block text-sm font-medium mb-2">Sertifikat linki</label>
-        <input type="url" value={formData.credential_url} onChange={(e) => setFormData({ ...formData, credential_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
-      </div>
+
 
       <div className="flex gap-3 pt-4">
         <button type="submit" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg transition-shadow"><Save size={18} />Saqlash</button>
@@ -1040,7 +1037,7 @@ function CertificateForm({ data, onSave, onCancel }: any) {
 
       <div>
         <label className="block text-sm font-medium mb-2">Credential URL</label>
-        <input type="url" value={formData.credentialUrl} onChange={(e) => setFormData({ ...formData, credentialUrl: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+        <input type="url" value={formData.credential_url} onChange={(e) => setFormData({ ...formData, credential_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
       </div>
 
       <div className="flex gap-3">
