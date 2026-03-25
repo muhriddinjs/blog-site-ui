@@ -29,30 +29,59 @@ export interface ArticleCreate {
   seo_description?: string;
   keywords?: string[];
 }
+export interface PaginatedArticles {
+  items: Article[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+const transformArticle = (article: any): Article => ({
+  ...article,
+  keywords: typeof article.keywords === 'string' ? article.keywords.split(",").map((k: string) => k.trim()).filter(Boolean) : article.keywords || [],
+});
 
 export const articleService = {
   getAll: async (params?: any) => {
-    const { data } = await api.get<{ items: Article[] }>("/articles/", { params });
-    return data.items;
+    const { data } = await api.get<PaginatedArticles>("/articles/", { params });
+    return data.items.map(transformArticle);
+  },
+
+  adminGetAll: async (params?: any) => {
+    const { data } = await api.get<PaginatedArticles>("/admin/articles", { params });
+    return data.items.map(transformArticle);
   },
 
   getBySlug: async (slug: string) => {
     const { data } = await api.get<Article>(`/articles/${slug}`);
-    return data;
+    return transformArticle(data);
   },
 
   create: async (article: ArticleCreate) => {
-    const { data } = await api.post<Article>("/articles/", article);
+    const formattedArticle = {
+      ...article,
+      read_time: typeof article.read_time === 'string' ? parseInt(article.read_time) || 5 : article.read_time,
+      keywords: Array.isArray(article.keywords) ? article.keywords.join(", ") : article.keywords,
+      category: article.category?.toLowerCase(),
+    };
+    const { data } = await api.post<Article>("/admin/articles", formattedArticle);
     return data;
   },
 
   update: async (id: number, article: Partial<ArticleCreate>) => {
-    const { data } = await api.put<Article>(`/articles/${id}`, article);
+    const formattedArticle = {
+      ...article,
+      read_time: typeof article.read_time === 'string' ? parseInt(article.read_time) || 5 : article.read_time,
+      keywords: Array.isArray(article.keywords) ? article.keywords.join(", ") : article.keywords,
+      category: article.category?.toLowerCase(),
+    };
+    const { data } = await api.put<Article>(`/admin/articles/${id}`, formattedArticle);
     return data;
   },
 
   delete: async (id: number) => {
-    const { data } = await api.delete(`/articles/${id}`);
+    const { data } = await api.delete(`/admin/articles/${id}`);
     return data;
   },
 

@@ -70,6 +70,8 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         }
         .ql-editor {
           min-height: 300px;
+          max-height: 500px;
+          overflow-y: auto;
         }
         .dark .ql-editor {
           color: rgb(243 244 246);

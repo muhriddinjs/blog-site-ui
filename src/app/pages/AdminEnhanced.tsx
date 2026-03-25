@@ -10,10 +10,11 @@ import { articleService } from "../services/articleService";
 import { portfolioService } from "../services/portfolioService";
 import { certificateService } from "../services/certificateService";
 import { authService } from "../services/authService";
+import { aboutService } from "../services/aboutService";
 import { RichTextEditor } from "../components/admin/RichTextEditor";
 import { ImageUpload } from "../components/admin/ImageUpload";
 import { PreviewModal } from "../components/admin/PreviewModal";
-import { toast } from "sonner";
+import { Snackbar, Alert, AlertProps } from "@mui/material";
 import { LogOut, Key } from "lucide-react";
 
 type TabType = "articles" | "projects" | "certificates" | "about";
@@ -74,10 +75,24 @@ export function Admin() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({ old: "", new: "" });
 
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: AlertProps['severity']}>({
+    open: false,
+    message: "",
+    severity: "success"
+  });
+
+  const showMessage = (msg: string, severity: AlertProps['severity'] = "success") => {
+    setSnackbar({ open: true, message: msg, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   // Articles Query
   const { data: articles = [], isLoading: articlesLoading } = useQuery({
     queryKey: ["articles"],
-    queryFn: () => articleService.getAll(),
+    queryFn: () => articleService.adminGetAll(),
     enabled: activeTab === "articles",
   });
 
@@ -86,51 +101,59 @@ export function Admin() {
     mutationFn: (newArticle: any) => articleService.create(newArticle),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["articles"] });
-      toast.success("Maqola qo'shildi");
+      showMessage("Maqola qo'shildi", "success");
       setIsAdding(false);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => articleService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["articles"] });
-      toast.success("Maqola yangilandi");
+      showMessage("Maqola yangilandi", "success");
       setEditingItem(null);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => articleService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["articles"] });
-      toast.success("Maqola o'chirildi");
+      showMessage("Maqola o'chirildi", "success");
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   // Projects Query
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ["projects"],
-    queryFn: () => portfolioService.getAll(),
+    queryFn: () => portfolioService.adminGetAll(),
     enabled: activeTab === "projects",
   });
 
   // Certificates Query
   const { data: certificates = [], isLoading: certificatesLoading } = useQuery({
     queryKey: ["certificates"],
-    queryFn: () => certificateService.getAll(),
+    queryFn: () => certificateService.adminGetAll(),
     enabled: activeTab === "certificates",
   });
 
-  const [aboutData, setAboutData] = useState<AboutData>({
-    name: "Sizning Ismingiz",
-    title: "Full Stack Developer",
-    tagline: "Innovatsiya",
-    bio: "Bio...",
-    stats: [],
+  // About Query & Mutation
+  const { data: aboutData, isLoading: aboutLoading } = useQuery({
+    queryKey: ["about"],
+    queryFn: () => aboutService.adminGet(),
+    enabled: activeTab === "about",
+  });
+
+  const updateAboutMutation = useMutation({
+    mutationFn: (data: any) => aboutService.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["about"] });
+      showMessage("About ma'lumotlari yangilandi", "success");
+    },
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   // Project Mutations
@@ -138,29 +161,29 @@ export function Admin() {
     mutationFn: (newProject: any) => portfolioService.create(newProject),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Proyekt qo'shildi");
+      showMessage("Proyekt qo'shildi", "success");
       setIsAdding(false);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const updateProjectMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => portfolioService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Proyekt yangilandi");
+      showMessage("Proyekt yangilandi", "success");
       setEditingItem(null);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const deleteProjectMutation = useMutation({
     mutationFn: (id: number) => portfolioService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Proyekt o'chirildi");
+      showMessage("Proyekt o'chirildi", "success");
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   // Certificate Mutations
@@ -168,29 +191,29 @@ export function Admin() {
     mutationFn: (newCert: any) => certificateService.create(newCert),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["certificates"] });
-      toast.success("Sertifikat qo'shildi");
+      showMessage("Sertifikat qo'shildi", "success");
       setIsAdding(false);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const updateCertMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => certificateService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["certificates"] });
-      toast.success("Sertifikat yangilandi");
+      showMessage("Sertifikat yangilandi", "success");
       setEditingItem(null);
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const deleteCertMutation = useMutation({
     mutationFn: (id: number) => certificateService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["certificates"] });
-      toast.success("Sertifikat o'chirildi");
+      showMessage("Sertifikat o'chirildi", "success");
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => showMessage("Xatolik yuz berdi", "error"),
   });
 
   const tabs = [
@@ -232,8 +255,7 @@ export function Admin() {
         createCertMutation.mutate(data);
       }
     } else if (activeTab === "about") {
-      setAboutData(data);
-      toast.success("About ma'lumotlari yangilandi");
+      updateAboutMutation.mutate(data);
     }
 
     if (activeTab !== "articles" && activeTab !== "projects" && activeTab !== "certificates") {
@@ -246,11 +268,11 @@ export function Admin() {
     e.preventDefault();
     try {
       await authService.changePassword(passwordData.old, passwordData.new);
-      toast.success("Parol muvaffaqiyatli o'zgartirildi");
+      showMessage("Parol muvaffaqiyatli o'zgartirildi", "success");
       setIsChangingPassword(false);
       setPasswordData({ old: "", new: "" });
     } catch (err) {
-      toast.error("Parolni o'zgartirishda xatolik");
+      showMessage("Parolni o'zgartirishda xatolik", "error");
     }
   };
 
@@ -394,7 +416,13 @@ export function Admin() {
 
           {/* About Form */}
           {activeTab === "about" && (
-            <AboutForm data={aboutData} onSave={handleSave} />
+            aboutLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+              </div>
+            ) : (
+              <AboutForm data={aboutData} onSave={handleSave} />
+            )
           )}
 
           {/* Forms */}
@@ -508,6 +536,12 @@ export function Admin() {
           </motion.div>
         </div>
       )}
+
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
@@ -618,12 +652,18 @@ function CertificatesList({ certificates, onEdit, onDelete }: any) {
 
 // Form Components (continuing in next message due to length)
 function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
-  const [formData, setFormData] = useState(
-    data || {
+  const [formData, setFormData] = useState(() => {
+    if (data) {
+      return {
+        ...data,
+        published_at: data.published_at ? data.published_at.split("T")[0] : new Date().toISOString().split("T")[0],
+      };
+    }
+    return {
       title: "",
       slug: "",
       summary: "",
-      category: "Development",
+      category: "other",
       published_at: new Date().toISOString().split("T")[0],
       read_time: "",
       image: "",
@@ -632,8 +672,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
       seo_title: "",
       seo_description: "",
       keywords: [],
-    }
-  );
+    };
+  });
 
   const [keywordInput, setKeywordInput] = useState("");
 
@@ -688,11 +728,13 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
           >
-            <option>Development</option>
-            <option>Design</option>
-            <option>Performance</option>
-            <option>Backend</option>
-            <option>AI</option>
+            <option value="design">Design</option>
+            <option value="performance">Performance</option>
+            <option value="backend">Backend</option>
+            <option value="frontend">Frontend</option>
+            <option value="devops">DevOps</option>
+            <option value="mobile">Mobile</option>
+            <option value="other">Other</option>
           </select>
         </div>
         <div>
@@ -1010,7 +1052,13 @@ function CertificateForm({ data, onSave, onCancel }: any) {
 }
 
 function AboutForm({ data, onSave }: any) {
-  const [formData, setFormData] = useState(data);
+  const [formData, setFormData] = useState(data || {
+    name: "Sizning Ismingiz",
+    title: "Full Stack Developer",
+    tagline: "",
+    bio: "",
+    stats: []
+  });
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">

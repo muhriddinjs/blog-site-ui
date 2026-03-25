@@ -1,15 +1,22 @@
 import { motion } from "motion/react";
 import { Code2, Palette, Zap, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { aboutService } from "../services/aboutService";
 
 export function Home() {
-  // This data can be fetched from API
+  // Fetch data from API
+  const { data: serverAboutData, isLoading } = useQuery({
+    queryKey: ["about"],
+    queryFn: () => aboutService.get(),
+  });
+
   const aboutData = {
-    name: "Sizning Ismingiz",
-    title: "Full Stack Developer & Designer",
-    tagline: "Innovatsiya va kreativlik orqali g'oyalarni hayotga tatbiq etaman",
-    bio: "Men zamonaviy veb-ilovalar yaratish bilan shug'ullanaman. React, Node.js va boshqa texnologiyalar yordamida foydalanuvchilar uchun ajoyib tajribalar yarataman.",
-    stats: [
+    name: serverAboutData?.name || "Sizning Ismingiz",
+    title: serverAboutData?.title || "Full Stack Developer & Designer",
+    tagline: serverAboutData?.tagline || "Innovatsiya va kreativlik orqali g'oyalarni hayotga tatbiq etaman",
+    bio: serverAboutData?.bio || "Men zamonaviy veb-ilovalar yaratish bilan shug'ullanaman. React, Node.js va boshqa texnologiyalar yordamida foydalanuvchilar uchun ajoyib tajribalar yarataman.",
+    stats: serverAboutData?.stats?.length ? serverAboutData.stats : [
       { value: "50+", label: "Loyihalar" },
       { value: "30+", label: "Maqolalar" },
       { value: "5+", label: "Yillik tajriba" },
@@ -20,6 +27,14 @@ export function Home() {
       { icon: Zap, title: "Performance", description: "Optimization, Best Practices, Clean Code" },
     ],
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -27,7 +27,12 @@ export interface ProjectCreate {
 
 export const portfolioService = {
   getAll: async () => {
-    const { data } = await api.get<{ items: Project[] }>("/portfolios/");
+    const { data } = await api.get<{ items: Project[] }>("/portfolios");
+    return data.items;
+  },
+
+  adminGetAll: async () => {
+    const { data } = await api.get<{ items: Project[] }>("/admin/portfolios");
     return data.items;
   },
 

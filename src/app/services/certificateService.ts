@@ -23,7 +23,12 @@ export interface CertificateCreate {
 
 export const certificateService = {
   getAll: async () => {
-    const { data } = await api.get<{ items: Certificate[] }>("/certificates/");
+    const { data } = await api.get<{ items: Certificate[] }>("/certificates");
+    return data.items;
+  },
+
+  adminGetAll: async () => {
+    const { data } = await api.get<{ items: Certificate[] }>("/admin/certificates");
     return data.items;
   },
 
