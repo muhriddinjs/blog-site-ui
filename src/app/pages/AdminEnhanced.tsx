@@ -278,19 +278,19 @@ export function Admin() {
 
 
   const filteredArticles = articles.filter((article: any) =>
-    article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    article.summary.toLowerCase().includes(searchQuery.toLowerCase())
+    (article.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+    (article.summary?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
 
   const filteredProjects = projects.filter((project: any) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (project.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+    (project.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
   const filteredCertificates = certificates.filter((cert: any) =>
-    cert.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cert.issuer.toLowerCase().includes(searchQuery.toLowerCase())
+    (cert.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+    (cert.issuer?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
   return (
