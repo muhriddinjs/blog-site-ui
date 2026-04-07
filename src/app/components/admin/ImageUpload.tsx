@@ -7,39 +7,70 @@ interface ImageUploadProps {
   label?: string;
 }
 
-export function ImageUpload({ value, onChange, label = "Rasm" }: ImageUploadProps) {
+export function ImageUpload({
+  value,
+  onChange,
+  label = "Rasm",
+}: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // In a real application, you would upload to your server or cloud storage
-    // For now, we'll create a local URL
+    // 1. Validatsiya: Fayl hajmini tekshirish (5MB = 5 * 1024 * 1024 bytes)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      alert("Xatolik: Fayl hajmi 5MB dan oshmasligi kerak.");
+      e.target.value = ""; // Inputni tozalash
+      return;
+    }
+
+    // 2. Validatsiya: Fayl turini tekshirish
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert(
+        "Xatolik: Faqat JPG, PNG, GIF yoki WEBP formatidagi rasmlar ruxsat etilgan.",
+      );
+      e.target.value = "";
+      return;
+    }
+
     setIsUploading(true);
-    
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      onChange(reader.result as string);
+    try {
+      const formData = new FormData();
+      // Eslatma: 'file' kaliti backend kutayotgan nomga mos bo'lishi kerak.
+      // FastAPI dagi UploadFile parametriga moslang.
+      formData.append("file", file);
+
+      const response = await fetch("https://api.muhriddinjs.uz/api/v1/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server xatoligi: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Backend qaytargan ochiq URL ni formaga uzatamiz
+      onChange(data.url);
+    } catch (error) {
+      console.error("Fayl yuklashda xatolik:", error);
+      alert("Rasmni yuklash imkonsiz bo'ldi. Tarmoq ulanishini tekshiring.");
+    } finally {
       setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
-
-    // TODO: Replace with actual upload to server
-    // const formData = new FormData();
-    // formData.append('image', file);
-    // const response = await fetch('/api/upload', { method: 'POST', body: formData });
-    // const data = await response.json();
-    // onChange(data.url);
+      // Keyingi safar xuddi shu faylni tanlaganda ham onChange ishlashi uchun inputni tozalash
+      e.target.value = "";
+    }
   };
 
   return (
     <div>
       <label className="block text-sm font-medium mb-2">{label}</label>
-      
+
       {value ? (
         <div className="relative">
           <img
@@ -61,13 +92,16 @@ export function ImageUpload({ value, onChange, label = "Rasm" }: ImageUploadProp
             {isUploading ? (
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-3"></div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Yuklanmoqda...</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Yuklanmoqda...
+                </p>
               </div>
             ) : (
               <>
                 <Upload className="w-12 h-12 mb-3 text-gray-400" />
                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-semibold">Bosing</span> yoki faylni tashlang
+                  <span className="font-semibold">Bosing</span> yoki faylni
+                  tashlang
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500">
                   PNG, JPG yoki GIF (MAX. 5MB)
