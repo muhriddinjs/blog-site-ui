@@ -37,24 +37,29 @@ interface Article {
 
 interface Project {
   id: number;
-  title: string;
-  description: string;
+  name: string;           // Backend: name (title EMAS!)
+  description?: string;
   category: string;
-  tags: string[];
-  image: string;
-  liveUrl: string;
-  githubUrl: string;
+  technologies: string[];  // Backend: technologies
+  tags: string[];          // Backend: tags (alohida maydon!)
+  image?: string;
+  live_url?: string;       // Backend: live_url (liveUrl EMAS!)
+  github_url?: string;     // Backend: github_url (githubUrl EMAS!)
+  is_featured: boolean;
+  order: number;
 }
 
 interface Certificate {
   id: number;
-  title: string;
+  name: string;            // Backend: name (title EMAS!)
   issuer: string;
-  type: string;
-  date: string;
+  // Backend CertificateType: certificate | honor | achievement
+  // MUHIM: diploma/course/badge MAVJUD EMAS backend da!
+  certificate_type: "certificate" | "honor" | "achievement";
+  issued_date?: string;    // Backend: issued_date (date EMAS!)
   skills: string[];
-  image: string;
-  credentialUrl: string;
+  image?: string;
+  credential_url?: string; // Backend: credential_url (credentialUrl EMAS!)
 }
 
 interface AboutData {
@@ -656,7 +661,12 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
     if (data) {
       return {
         ...data,
-        published_at: data.published_at ? data.published_at.split("T")[0] : new Date().toISOString().split("T")[0],
+        // read_time backend dan int keladi, formda number saqlaymiz
+        read_time: typeof data.read_time === "number" ? data.read_time : 5,
+        // keywords: array sifatida (articleService toArticleUI qiladi)
+        keywords: Array.isArray(data.keywords) ? data.keywords : [],
+        // published_at ni YUBORMAYMIZ backend ga (schema da yo'q)
+        // Faqat ko'rsatish uchun saqlaymiz
       };
     }
     return {
@@ -664,8 +674,8 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
       slug: "",
       summary: "",
       category: "other",
-      published_at: new Date().toISOString().split("T")[0],
-      read_time: "",
+      // read_time: int (1-120), string EMAS!
+      read_time: 5,
       image: "",
       content: "",
       status: "draft",
@@ -749,22 +759,25 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Sana</label>
+          {/* published_at backend sxemasida YO'Q — yubormaymiz, faqat ko'rsatamiz */}
+          <label className="block text-sm font-medium mb-2">Sana (ma'lumot)</label>
           <input
-            type="date"
-            value={formData.published_at}
-            onChange={(e) => setFormData({ ...formData, published_at: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
-            required
+            type="text"
+            value={data?.published_at ? new Date(data.published_at).toLocaleDateString() : "Yangi"}
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+            disabled
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">O'qish vaqti</label>
+          {/* read_time: int (1-120) — backend validation: ge=1, le=120 */}
+          <label className="block text-sm font-medium mb-2">O'qish vaqti (daqiqa)</label>
           <input
-            type="text"
+            type="number"
+            min={1}
+            max={120}
             value={formData.read_time}
-            onChange={(e) => setFormData({ ...formData, read_time: e.target.value })}
-            placeholder="5 daqiqa"
+            onChange={(e) => setFormData({ ...formData, read_time: parseInt(e.target.value, 10) || 5 })}
+            placeholder="5"
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
             required
           />
@@ -772,9 +785,11 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
       </div>
 
       {/* Image Upload */}
+      {/* uploadConfig: faqat tahrirlashda (data.id mavjud bo'lsa) fayl yuklash mumkin */}
       <ImageUpload
-        value={formData.image}
+        value={formData.image || ""}
         onChange={(url) => setFormData({ ...formData, image: url })}
+        uploadConfig={data?.id ? { entityType: "articles", entityId: data.id } : undefined}
       />
 
       {/* Content Editor */}
@@ -892,9 +907,12 @@ function ProjectForm({ data, onSave, onCancel }: any) {
       description: "",
       category: "web",
       technologies: [],
+      tags: [],            // Backend: tags: List[str] = [] — bo'sh array yuborish kerak
       image: "",
       live_url: "",
       github_url: "",
+      is_featured: false,  // Backend: is_featured: bool = False
+      order: 0,            // Backend: order: int = 0
     }
   );
 
@@ -957,8 +975,35 @@ function ProjectForm({ data, onSave, onCancel }: any) {
         </div>
       </div>
 
-      <ImageUpload value={formData.image} onChange={(url) => setFormData({ ...formData, image: url })} />
+      {/* Qo'shimcha maydonlar */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Tartib raqami</label>
+          <input
+            type="number"
+            min={0}
+            value={formData.order}
+            onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value, 10) || 0 })}
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+          />
+        </div>
+        <div className="flex items-center gap-3 mt-6">
+          <input
+            type="checkbox"
+            id="is_featured"
+            checked={formData.is_featured}
+            onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+            className="w-4 h-4 rounded border-gray-300"
+          />
+          <label htmlFor="is_featured" className="text-sm font-medium">Asosiy (Featured)</label>
+        </div>
+      </div>
 
+      <ImageUpload
+        value={formData.image || ""}
+        onChange={(url) => setFormData({ ...formData, image: url })}
+        uploadConfig={data?.id ? { entityType: "portfolios", entityId: data.id } : undefined}
+      />
 
 
       <div className="flex gap-3 pt-4">
@@ -974,7 +1019,8 @@ function CertificateForm({ data, onSave, onCancel }: any) {
     data || {
       name: "",
       issuer: "",
-      certificate_type: "certificate",
+      // Backend CertificateType: certificate | honor | achievement
+      certificate_type: "certificate" as "certificate" | "honor" | "achievement",
       issued_date: new Date().toISOString().split("T")[0],
       skills: [],
       image: "",
@@ -1005,10 +1051,11 @@ function CertificateForm({ data, onSave, onCancel }: any) {
             onChange={(e) => setFormData({ ...formData, certificate_type: e.target.value })} 
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
           >
+            {/* Backend CertificateType enum: faqat shu 3 ta qiymat qabul qilinadi */}
             <option value="certificate">Sertifikat</option>
-            <option value="diploma">Diplom</option>
-            <option value="course">Kurs</option>
-            <option value="badge">Badge</option>
+            <option value="honor">Faxriy</option>
+            <option value="achievement">Yutuq</option>
+            {/* diploma, course, badge — backend da YO'Q → 422 Validation Error beradi */}
           </select>
         </div>
         <div>
@@ -1033,7 +1080,11 @@ function CertificateForm({ data, onSave, onCancel }: any) {
         </div>
       </div>
 
-      <ImageUpload value={formData.image} onChange={(url) => setFormData({ ...formData, image: url })} />
+      <ImageUpload
+        value={formData.image || ""}
+        onChange={(url) => setFormData({ ...formData, image: url })}
+        uploadConfig={data?.id ? { entityType: "certificates", entityId: data.id } : undefined}
+      />
 
       <div>
         <label className="block text-sm font-medium mb-2">Credential URL</label>
