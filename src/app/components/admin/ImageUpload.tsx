@@ -44,7 +44,7 @@ export function ImageUpload({
       // FastAPI dagi UploadFile parametriga moslang.
       formData.append("file", file);
 
-      const response = await fetch("https://api.muhriddinjs.uz/api/v1/upload", {
+      const response = await fetch("api/upload", {
         method: "POST",
         body: formData,
       });
