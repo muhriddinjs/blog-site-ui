@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Upload, X } from "lucide-react";
 import api from "../../api/api";
 
@@ -34,7 +34,6 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,7 +137,6 @@ export function ImageUpload({
         /* Fayl yuklash zonasi — faqat mavjud entity uchun */
         <label
           className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mb-2"
-          onClick={() => !isUploading && inputRef.current?.click()}
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             {isUploading ? (
@@ -159,7 +157,6 @@ export function ImageUpload({
             )}
           </div>
           <input
-            ref={inputRef}
             type="file"
             className="hidden"
             accept="image/jpeg,image/png,image/gif,image/webp"

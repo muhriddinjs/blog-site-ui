@@ -142,31 +142,4 @@ export const certificateService = {
       throw error;
     }
   },
-
-  /**
-   * Sertifikat uchun rasm yuklash
-   * Backend: POST /admin/certificates/{certificate_id}/upload-image — multipart/form-data
-   * MUHIM: Avval sertifikatni yaratib, ID olish kerak!
-   * @returns { image_url: string } — /uploads/certificates/abc123.jpg
-   */
-  uploadImage: async (certificateId: number, file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file); // 'file' — backend UploadFile = File(...) parametri
-
-      const { data } = await api.post<{ image_url: string }>(
-        `/admin/certificates/${certificateId}/upload-image`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      // Backend: { "image_url": "/uploads/certificates/abc123.jpg" }
-      return data.image_url;
-    } catch (error: any) {
-      console.error("[certificateService.uploadImage] Xatolik:", error?.response?.data || error.message);
-      throw error;
-    }
-  },
 };

@@ -135,31 +135,4 @@ export const portfolioService = {
       throw error;
     }
   },
-
-  /**
-   * Portfolio uchun rasm yuklash
-   * Backend: POST /admin/portfolios/{portfolio_id}/upload-image — multipart/form-data
-   * MUHIM: Avval portfolioni yaratib, ID olish kerak!
-   * @returns { image_url: string } — /uploads/portfolios/abc123.jpg
-   */
-  uploadImage: async (portfolioId: number, file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file); // 'file' — backend UploadFile = File(...) parametri
-
-      const { data } = await api.post<{ image_url: string }>(
-        `/admin/portfolios/${portfolioId}/upload-image`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      // Backend: { "image_url": "/uploads/portfolios/abc123.jpg" }
-      return data.image_url;
-    } catch (error: any) {
-      console.error("[portfolioService.uploadImage] Xatolik:", error?.response?.data || error.message);
-      throw error;
-    }
-  },
 };

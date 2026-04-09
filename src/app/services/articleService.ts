@@ -209,34 +209,4 @@ export const articleService = {
       throw error;
     }
   },
-
-  /**
-   * Maqola uchun rasm yuklash
-   * Backend: POST /admin/articles/{article_id}/upload-image — multipart/form-data
-   * MUHIM: Avval maqolani yaratib, ID olish kerak!
-   * @returns { image_url: string } — backend qaytargan URL
-   */
-  uploadImage: async (articleId: number, file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file); // 'file' — backend UploadFile = File(...) parametri nomi
-
-      const { data } = await api.post<{ image_url: string }>(
-        `/admin/articles/${articleId}/upload-image`,
-        formData,
-        {
-          headers: {
-            // axios multipart uchun Content-Type ni avtomatik belgilaydi (boundary bilan)
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      // Backend: { "image_url": "/uploads/articles/abc123.jpg" }
-      return data.image_url;
-    } catch (error: any) {
-      console.error("[articleService.uploadImage] Xatolik:", error?.response?.data || error.message);
-      throw error;
-    }
-  },
 };
