@@ -174,7 +174,7 @@ export function ImageUpload({
 
       {/* URL input — har doim ko'rinadi */}
       <input
-        type="url"
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Yoki rasm URL kiriting (https://...)"
