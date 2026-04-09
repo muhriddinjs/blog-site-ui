@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 
 import { useQuery } from "@tanstack/react-query";
 import { articleService } from "../services/articleService";
+import { resolveImageUrl } from "../api/api";
 
 export function BlogPost() {
   const { slug } = useParams();
@@ -41,9 +42,9 @@ export function BlogPost() {
     <>
       <SEOHead
         title={article.title}
-        description={article.seo_description}
+        description={article.seo_description ?? undefined}
         keywords={article.keywords}
-        image={article.image}
+        image={resolveImageUrl(article.image)}
         type="article"
       />
       
@@ -91,7 +92,7 @@ export function BlogPost() {
 
           <div className="aspect-video rounded-2xl overflow-hidden mb-8 bg-gray-100 dark:bg-gray-800">
             <img
-              src={article.image}
+              src={resolveImageUrl(article.image)}
               alt={article.title}
               className="w-full h-full object-cover"
             />
@@ -111,7 +112,9 @@ export function BlogPost() {
               prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-a:no-underline hover:prose-a:underline
               prose-strong:text-gray-900 dark:prose-strong:text-gray-100
               prose-code:text-purple-600 dark:prose-code:text-purple-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:rounded"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ 
+              __html: article.content.replace(/src="\/uploads\//g, `src="${resolveImageUrl("/uploads/")}`) 
+            }}
           />
 
           {/* Share Buttons at Bottom */}

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { articleService } from "../services/articleService";
+import { resolveImageUrl } from "../api/api";
 
 export function Blog() {
   const { data: articles = [], isLoading, error } = useQuery({
@@ -94,7 +95,7 @@ export function Blog() {
               <div className="h-full rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-purple-500 dark:hover:border-purple-500 transition-colors">
                 <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
                   <img
-                    src={article.image}
+                    src={resolveImageUrl(article.image)}
                     alt={article.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Upload, X } from "lucide-react";
-import api from "../../api/api";
+import api, { resolveImageUrl } from "../../api/api";
 
 interface ImageUploadProps {
   value: string;
@@ -117,7 +117,7 @@ export function ImageUpload({
       {value ? (
         <div className="relative mb-2">
           <img
-            src={value}
+            src={resolveImageUrl(value)}
             alt="Preview"
             className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
             onError={(e) => {

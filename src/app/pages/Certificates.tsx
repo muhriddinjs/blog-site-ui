@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { certificateService } from "../services/certificateService";
+import { resolveImageUrl } from "../api/api";
 
 export function Certificates() {
   const [selectedType, setSelectedType] = useState("Hammasi");
@@ -83,7 +84,7 @@ export function Certificates() {
           >
             <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
               <img
-                src={certificate.image}
+                src={resolveImageUrl(certificate.image)}
                 alt={certificate.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -124,7 +125,7 @@ export function Certificates() {
               </div>
 
               <a
-                href={certificate.credential_url}
+                href={certificate.credential_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm transition-colors"

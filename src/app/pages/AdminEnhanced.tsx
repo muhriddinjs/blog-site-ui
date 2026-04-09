@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { 
   FileText, Briefcase, Award, User, Plus, Edit2, Trash2, Save, X, 
-  ArrowLeft, Search, Eye, CheckCircle, Clock
+  ArrowLeft, Search, Eye, CheckCircle, Clock, LogOut, Key
 } from "lucide-react";
 import { Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,11 +11,11 @@ import { portfolioService } from "../services/portfolioService";
 import { certificateService } from "../services/certificateService";
 import { authService } from "../services/authService";
 import { aboutService } from "../services/aboutService";
+import { resolveImageUrl } from "../api/api";
 import { RichTextEditor } from "../components/admin/RichTextEditor";
 import { ImageUpload } from "../components/admin/ImageUpload";
 import { PreviewModal } from "../components/admin/PreviewModal";
 import { Snackbar, Alert, AlertProps } from "@mui/material";
-import { LogOut, Key } from "lucide-react";
 
 type TabType = "articles" | "projects" | "certificates" | "about";
 
@@ -472,7 +472,7 @@ export function Admin() {
       >
         {previewData && (
           <article className="prose prose-lg dark:prose-invert max-w-none">
-            <img src={previewData.image} alt={previewData.title} className="w-full rounded-lg mb-6" />
+            <img src={resolveImageUrl(previewData.image)} alt={previewData.title} className="w-full rounded-lg mb-6" />
             <h1>{previewData.title}</h1>
             <p className="text-gray-600 dark:text-gray-400">{previewData.summary}</p>
             <div dangerouslySetInnerHTML={{ __html: previewData.content }} />
@@ -557,7 +557,7 @@ function ArticlesList({ articles, onEdit, onDelete, onPreview }: any) {
     <div className="grid gap-4">
       {articles.map((article: Article) => (
         <div key={article.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-          <img src={article.image} alt={article.title} className="w-24 h-24 rounded-lg object-cover" />
+          <img src={resolveImageUrl(article.image)} alt={article.title} className="w-24 h-24 rounded-lg object-cover" />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="font-semibold text-lg">{article.title}</h3>
@@ -599,7 +599,7 @@ function ProjectsList({ projects, onEdit, onDelete }: any) {
     <div className="grid gap-4">
       {projects.map((project: any) => (
         <div key={project.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-          <img src={project.image} alt={project.name} className="w-24 h-24 rounded-lg object-cover" />
+          <img src={resolveImageUrl(project.image)} alt={project.name} className="w-24 h-24 rounded-lg object-cover" />
           <div className="flex-1">
             <h3 className="font-semibold text-lg mb-1">{project.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{project.description}</p>
@@ -630,7 +630,7 @@ function CertificatesList({ certificates, onEdit, onDelete }: any) {
     <div className="grid gap-4">
       {certificates.map((cert: any) => (
         <div key={cert.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-          <img src={cert.image} alt={cert.name} className="w-24 h-24 rounded-lg object-cover" />
+          <img src={resolveImageUrl(cert.image)} alt={cert.name} className="w-24 h-24 rounded-lg object-cover" />
           <div className="flex-1">
             <h3 className="font-semibold text-lg mb-1">{cert.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{cert.issuer}</p>
@@ -797,7 +797,7 @@ function ArticleForm({ data, onSave, onCancel, onPreview }: any) {
         <label className="block text-sm font-medium mb-2">Kontent</label>
         <RichTextEditor
           value={formData.content}
-          onChange={(content) => setFormData({ ...formData, content })}
+          onChange={(content: string) => setFormData({ ...formData, content })}
         />
       </div>
 
